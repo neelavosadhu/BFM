@@ -1,15 +1,27 @@
+pip install gspread oauth2client
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 import matplotlib.dates as mdates
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
-# Load your data
-# Assuming that data is in a CSV file with columns: 'Date', 'Sales', 'Buy', 'Sell'
-data = pd.read_csv('sales_data.csv', parse_dates=['Date'])
+# Google Sheets authentication
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_name('path_to_your_service_account.json', scope)
+client = gspread.authorize(creds)
+
+# Open the Google Sheet
+sheet = client.open("Your Google Sheet Name").sheet1
+
+# Fetch all records
+records = sheet.get_all_records()
+data = pd.DataFrame.from_records(records)
 
 # Data Preprocessing
+data['Date'] = pd.to_datetime(data['Date'])
 data['Month'] = data['Date'].dt.month
 data['Year'] = data['Date'].dt.year
 
