@@ -40,10 +40,11 @@ ax.plot(data['Date'], data['Predicted_Sales'], label='Predicted Sales', color='o
 # Adding buy and sell markers with arrows
 data['Previous_Close'] = data['Close'].shift(1)  # Shift the entire column
 for i, row in data.iterrows():
-    if row['Close'] > row['Previous_Close']:  # Example condition for Buy
-        ax.annotate('↑', (row['Date'], row['Close']), color='green', textcoords="offset points", xytext=(0,10), ha='center')
-    elif row['Close'] < row['Previous_Close']:  # Example condition for Sell
-        ax.annotate('↓', (row['Date'], row['Close']), color='red', textcoords="offset points", xytext=(0,-10), ha='center')
+    if pd.notnull(row['Previous_Close']):
+        if row['Close'] > row['Previous_Close']:  # Example condition for Buy
+            ax.annotate('↑', (row['Date'], row['Close']), color='green', textcoords="offset points", xytext=(0,10), ha='center')
+        elif row['Close'] < row['Previous_Close']:  # Example condition for Sell
+            ax.annotate('↓', (row['Date'], row['Close']), color='red', textcoords="offset points", xytext=(0,-10), ha='center')
 
 # Adding filters
 ax.set_title('Sales Prediction with Buy/Sell Data')
