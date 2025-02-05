@@ -1,4 +1,4 @@
-pip install gspread oauth2client
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
