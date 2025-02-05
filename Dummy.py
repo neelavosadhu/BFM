@@ -1,33 +1,25 @@
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 import matplotlib.dates as mdates
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+import yfinance as yf
 
-# Google Sheets authentication
-scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name('path_to_your_service_account.json', scope)
-client = gspread.authorize(creds)
-
-# Open the Google Sheet
-sheet = client.open("Your Google Sheet Name").sheet1
-
-# Fetch all records
-records = sheet.get_all_records()
-data = pd.DataFrame.from_records(records)
+# Define the stock ticker and fetch data from Yahoo Finance
+ticker = "AAPL"  # Example ticker, replace with your desired ticker
+stock = yf.Ticker(ticker)
+data = stock.history(period="5y")  # Fetching last 5 years of data
 
 # Data Preprocessing
+data.reset_index(inplace=True)
 data['Date'] = pd.to_datetime(data['Date'])
 data['Month'] = data['Date'].dt.month
 data['Year'] = data['Date'].dt.year
 
 # Feature selection and target variable
 X = data[['Month', 'Year']]
-y = data['Sales']
+y = data['Close']  # Assuming 'Close' price is used for sales prediction
 
 # Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -42,15 +34,15 @@ data['Predicted_Sales'] = model.predict(X)
 # Plotting the results
 fig, ax = plt.subplots()
 
-ax.plot(data['Date'], data['Sales'], label='Actual Sales', color='blue')
+ax.plot(data['Date'], data['Close'], label='Actual Sales', color='blue')
 ax.plot(data['Date'], data['Predicted_Sales'], label='Predicted Sales', color='orange')
 
 # Adding buy and sell markers with arrows
 for i, row in data.iterrows():
-    if row['Buy'] > 0:
-        ax.annotate('↑', (row['Date'], row['Sales']), color='green', textcoords="offset points", xytext=(0,10), ha='center')
-    if row['Sell'] > 0:
-        ax.annotate('↓', (row['Date'], row['Sales']), color='red', textcoords="offset points", xytext=(0,-10), ha='center')
+    if row['Close'] > row['Close'].shift(1):  # Example condition for Buy
+        ax.annotate('↑', (row['Date'], row['Close']), color='green', textcoords="offset points", xytext=(0,10), ha='center')
+    elif row['Close'] < row['Close'].shift(1):  # Example condition for Sell
+        ax.annotate('↓', (row['Date'], row['Close']), color='red', textcoords="offset points", xytext=(0,-10), ha='center')
 
 # Adding filters
 ax.set_title('Sales Prediction with Buy/Sell Data')
