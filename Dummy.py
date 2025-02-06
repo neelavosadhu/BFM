@@ -192,29 +192,31 @@ def main():
 
         year = st.selectbox("Select Year", [2020, 2021, 2022, 2023, 2024, 2025])
         
-        opening_price_data = load_opening_price_data(ticker)
-        data_scaled, scaler = normalize_data(opening_price_data)
-        train_data, test_data = split_data(data_scaled)
-        X_train, y_train = create_sequences(train_data)
-        X_test, y_test = create_sequences(test_data)
+        # Load and process data only once when the year is selected
+        if st.button("Run Prediction"):
+            opening_price_data = load_opening_price_data(ticker)
+            data_scaled, scaler = normalize_data(opening_price_data)
+            train_data, test_data = split_data(data_scaled)
+            X_train, y_train = create_sequences(train_data)
+            X_test, y_test = create_sequences(test_data)
 
-        model = build_lstm_model((X_train.shape[1], 1))
-        model = train_lstm_model(model, X_train, y_train, X_test, y_test)
-        predictions = make_predictions(model, X_test, scaler)
-        actual_prices = scaler.inverse_transform(y_test.reshape(-1, 1))
+            model = build_lstm_model((X_train.shape[1], 1))
+            model = train_lstm_model(model, X_train, y_train, X_test, y_test)
+            predictions = make_predictions(model, X_test, scaler)
+            actual_prices = scaler.inverse_transform(y_test.reshape(-1, 1))
 
-        # Generate dates for the selected year with 365 points
-        dates = pd.date_range(start=f"{year}-01-01", end=f"{year}-12-31", freq='D')
+            # Generate dates for the selected year with 365 points
+            dates = pd.date_range(start=f"{year}-01-01", end=f"{year}-12-31", freq='D')
 
-        # Fetch current stock price
-        current_price = fetch_current_stock_price(ticker)
+            # Fetch current stock price
+            current_price = fetch_current_stock_price(ticker)
 
-        # Plot the predictions
-        plot_predictions(dates[:len(predictions)], actual_prices, predictions, current_price, f"Daily Opening Price Prediction for {year}")
+            # Plot the predictions
+            plot_predictions(dates[:len(predictions)], actual_prices, predictions, current_price, f"Daily Opening Price Prediction for {year}")
 
-        st.subheader("Opening Price Data")
-        filtered_data = opening_price_data[opening_price_data['Year'] == year]
-        st.dataframe(filtered_data, height=200)
+            st.subheader("Opening Price Data")
+            filtered_data = opening_price_data[opening_price_data['Year'] == year]
+            st.dataframe(filtered_data, height=200)
 
     with col2:
         st.subheader(f"About {company}")
@@ -224,7 +226,10 @@ def main():
         st.subheader(f"{company} Performance")
         df_stock = fetch_stock_data(ticker)
         year_data = df_stock[df_stock.index.year == year]
-        st.slider("Volume Traded", min_value=int(year_data['Volume'].min()), max_value=int(year_data['Volume'].max()), value=int(year_data['Volume'].mean()), step=1)
+        volume_range = st.slider("Volume Traded", min_value=int(year_data['Volume'].min()), max_value=int(year_data['Volume'].max()), value=int(year_data['Volume'].mean()), step=1)
+        
+        # Display the selected volume range
+        st.write(f"Selected Volume Range: {volume_range}")
 
     with col3:
         st.subheader("Live News")
@@ -238,7 +243,7 @@ def main():
 
         st.subheader(f"{company} EPS, PE, IPO KPI")
         eps_pe_ipo_kpi = fetch_eps_pe_ipo_kpi(ticker)
-        kpi_info = f"*EPS: {eps_pe_ipo_kpi['EPS']}  |  **PE Ratio: {eps_pe_ipo_kpi['PE Ratio']}  |  **IPO Date: {eps_pe_ipo_kpi['IPO Date']}  |  **KPI*: {eps_pe_ipo_kpi['KPI']}  |  **Current Price*: {eps_pe_ipo_kpi['Current Price']}"
+        kpi_info = f"EPS: {eps_pe_ipo_kpi['EPS']}  |  **PE Ratio: {eps_pe_ipo_kpi['PE Ratio']}  |  **IPO Date: {eps_pe_ipo_kpi['IPO Date']}  |  **KPI: {eps_pe_ipo_kpi['KPI']}  |  *Current Price: {eps_pe_ipo_kpi['Current Price']}"
         st.write(kpi_info)
 
     st.write("Data fetched successfully! Use this for further analysis and prediction.")
